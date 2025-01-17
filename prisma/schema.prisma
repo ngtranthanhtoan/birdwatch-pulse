@@ -1,0 +1,2665 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                                    String                         @id @default(dbgenerated("nanoid(24)"))
+  name                                  String
+  firstName                             String?
+  email                                 String                         @unique
+  phone                                 String?
+  password                              String
+  invoicedContactId                     String?
+  isPending                             Boolean                        @default(true)
+  isVerify                              Boolean                        @default(true)
+  defaultRoleId                         String?
+  refreshToken                          String?
+  createdAt                             DateTime                       @default(now())
+  updatedAt                             DateTime
+  bio                                   String?
+  isActivated                           Boolean                        @default(true)
+  shortId                               String?                        @unique @default(dbgenerated("short_id('u'::text, 'model_user_seq'::text, 10000)"))
+  jobTitle                              String?
+  workingHours                          Json?
+  AccountTracking                       AccountTracking[]
+  Action_Action_assigneeIdToUser        Action[]                       @relation("Action_assigneeIdToUser")
+  Action_Action_userCreatedIdToUser     Action[]                       @relation("Action_userCreatedIdToUser")
+  CalendarEvent                         CalendarEvent[]
+  CatalogItem                           CatalogItem[]
+  CompleteVisit                         CompleteVisit[]
+  Feedback_Feedback_userCreatedIdToUser Feedback[]                     @relation("Feedback_userCreatedIdToUser")
+  Feedback_Feedback_userSubmitIdToUser  Feedback[]                     @relation("Feedback_userSubmitIdToUser")
+  Goal                                  Goal[]
+  GoogleCalendarEvent                   GoogleCalendarEvent[]
+  GoogleNotiChannel                     GoogleNotiChannel?
+  GoogleTokens                          GoogleTokens?
+  InternalComment                       InternalComment[]
+  Inventory                             Inventory[]
+  InventoryInformation                  InventoryInformation[]
+  Item                                  Item[]
+  LastServiceMessage                    LastServiceMessage[]
+  LineItem                              LineItem[]
+  ListItem                              ListItem[]
+  MeetLink                              MeetLink[]
+  Note                                  Note[]
+  Participant                           Participant[]
+  PinnedComment                         PinnedComment[]
+  ReadMessageTracking                   ReadMessageTracking[]
+  ReviewUpdate                          ReviewUpdate[]
+  ReviewUpdateNotification              ReviewUpdateNotification[]
+  ScheduleEvent                         ScheduleEvent[]
+  Service_Service_assigneeIdToUser      Service[]                      @relation("Service_assigneeIdToUser")
+  Service_Service_managerIdToUser       Service[]                      @relation("Service_managerIdToUser")
+  Service_Service_requesterIdToUser     Service[]                      @relation("Service_requesterIdToUser")
+  Service_Service_userCreatedToUser     Service[]                      @relation("Service_userCreatedToUser")
+  ServiceMessage                        ServiceMessage[]
+  ServiceTracking                       ServiceTracking[]
+  ServiceUpdates                        ServiceUpdates[]
+  Space                                 Space[]
+  SpaceDefaultList                      SpaceDefaultList[]
+  SpaceDraftList                        SpaceDraftList[]
+  SubscribeNotificationService          SubscribeNotificationService[]
+  SubscriptionTracking                  SubscriptionTracking[]
+  Task_Task_assigneeIdToUser            Task[]                         @relation("Task_assigneeIdToUser")
+  Task_Task_userCompletedIdToUser       Task[]                         @relation("Task_userCompletedIdToUser")
+  Task_Task_userCreatedIdToUser         Task[]                         @relation("Task_userCreatedIdToUser")
+  Technician                            Technician?
+  TimePreference                        TimePreference[]
+  TimeProposal                          TimeProposal[]
+  Role                                  Role?                          @relation(fields: [defaultRoleId], references: [id], onDelete: Cascade)
+  UserAccount                           UserAccount[]
+  UserDeviceToken                       UserDeviceToken[]
+  UserPlace                             UserPlace[]
+  UserProfile                           UserProfile[]
+  UserReadServiceMessage                UserReadServiceMessage[]
+  UserResetPassword                     UserResetPassword[]
+  UsersBelongRoles                      UsersBelongRoles[]
+  ViewDefault                           ViewDefault[]
+  Visit                                 Visit[]
+  VisitExpense                          VisitExpense[]
+  VisitReport                           VisitReport[]
+  VisitTechnician                       VisitTechnician[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([name])
+}
+
+model Account {
+  id                 String            @id @default(dbgenerated("nanoid(24)"))
+  name               String
+  invoicedCustomerId String?
+  type               AccountType       @default(INDIVIDUAL)
+  email              String?
+  phone              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime
+  relationship       RelationshipType? @default(CUSTOMER)
+  address1           String?
+  address2           String?
+  shortId            String?           @unique @default(dbgenerated("short_id('a'::text, 'model_account_seq'::text, 10000)"))
+  isArchived         Boolean           @default(false)
+  AccountMarket      AccountMarket[]
+  AccountTracking    AccountTracking[]
+  Service            Service[]
+  ServiceVendor      ServiceVendor[]
+  Subscription       Subscription[]
+  UserAccount        UserAccount[]
+  Vendor             Vendor?
+}
+
+model AccountMarket {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  accountId String
+  marketId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  Market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, marketId])
+}
+
+model AccountTracking {
+  id        String             @id @default(dbgenerated("nanoid(24)"))
+  userId    String
+  accountId String
+  key       AccountTrackingKey @default(ACQUISITION_CHANNEL)
+  value     Json
+  createdAt DateTime           @default(now())
+  updatedAt DateTime
+  Account   Account            @relation(fields: [accountId], references: [id])
+  User      User               @relation(fields: [userId], references: [id])
+
+  @@index([accountId])
+  @@index([key])
+  @@index([userId])
+}
+
+model Action {
+  id                              String          @id @default(dbgenerated("nanoid(24)"))
+  membershipId                    String
+  homePlanId                      String?
+  title                           String?
+  description                     String?
+  userCreatedId                   String?
+  assigneeId                      String?
+  isRoutineActive                 Boolean?        @default(false)
+  routineActiveDate               DateTime?
+  routineInactiveDate             DateTime?
+  cycle                           CYCLE?
+  timesPerCycle                   Int?            @default(1)
+  basePrice                       Float?
+  ceilingPrice                    Float?
+  actionPrompt                    ActionPrompt?
+  actionType                      ActionType?     @default(SERVICE_EVENT)
+  status                          ActionStatus?   @default(OPEN)
+  createdAt                       DateTime        @default(now())
+  updatedAt                       DateTime
+  User_Action_assigneeIdToUser    User?           @relation("Action_assigneeIdToUser", fields: [assigneeId], references: [id])
+  HomePlan                        HomePlan?       @relation(fields: [homePlanId], references: [id], onDelete: Cascade)
+  Membership                      Membership      @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  User_Action_userCreatedIdToUser User?           @relation("Action_userCreatedIdToUser", fields: [userCreatedId], references: [id])
+  ActionItems                     ActionItems[]
+  ServiceAction                   ServiceAction[]
+
+  @@index([assigneeId])
+  @@index([createdAt(sort: Desc)])
+  @@index([isRoutineActive])
+  @@index([membershipId])
+  @@index([userCreatedId])
+}
+
+model ActionEvents {
+  id        String           @id @default(dbgenerated("nanoid(24)"))
+  oldData   Json?
+  newData   Json?
+  userId    String?
+  type      ActionEventType? @default(CREATE)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime
+
+  @@index([type])
+  @@index([userId])
+}
+
+model ActionItems {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  itemId    String
+  actionId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Action    Action   @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  Item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([actionId])
+  @@index([itemId])
+}
+
+model Activity {
+  id         String        @id @default(dbgenerated("nanoid(24)"))
+  userId     String
+  serviceId  String
+  type       ActivityType? @default(CREATE)
+  oldService Json?
+  newService Json?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime
+
+  @@index([serviceId])
+  @@index([type])
+  @@index([userId])
+}
+
+model AiChatHistory {
+  id            String   @id @default(dbgenerated("nanoid(24)"))
+  message       Json
+  createdAt     DateTime @default(now())
+  contextId     String
+  contextType   String
+  userCreatedId String?
+
+  @@index([contextId], type: Hash)
+}
+
+model Attachable {
+  id             String     @id @default(dbgenerated("nanoid(24)"))
+  attachmentId   String
+  attachableType String
+  attachableId   String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime
+  Attachment     Attachment @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+
+  @@index([attachableId], type: Hash)
+  @@index([attachableType], type: Hash)
+}
+
+model Attachment {
+  id           String          @id @default(dbgenerated("nanoid(24)"))
+  contentUri   String
+  thumbnailUri String?
+  fileName     String
+  fileSize     Int             @default(0)
+  type         AttachmentType? @default(FILE)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime
+  uploaded     Boolean?        @default(true)
+  Attachable   Attachable[]
+
+  @@index([contentUri])
+  @@index([createdAt(sort: Desc)])
+  @@index([type])
+  @@index([updatedAt(sort: Desc)])
+}
+
+model CalendarEvent {
+  id                    String                 @id @default(dbgenerated("nanoid(24)"))
+  userCreatedId         String
+  calendarEventItemId   String
+  calendarEventItemType CalendarEventItemType? @default(VISIT)
+  isAllDay              Boolean?               @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime
+  User                  User                   @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  @@index([calendarEventItemType], type: Hash)
+  @@index([userCreatedId], type: Hash)
+}
+
+model CatalogItem {
+  id                                                              String                @id @default(dbgenerated("nanoid(24)"))
+  SKU                                                             String?
+  name                                                            String
+  description                                                     String?
+  type                                                            CatalogType?          @default(SERVICE)
+  categoryId                                                      String?
+  cost                                                            Float?
+  price                                                           Float?
+  userCreatedId                                                   String
+  isFlatPrice                                                     Boolean?              @default(false)
+  createdAt                                                       DateTime              @default(now())
+  updatedAt                                                       DateTime
+  isPublic                                                        Boolean?              @default(true)
+  unitType                                                        UnitType?             @default(HOUR)
+  markup                                                          Float?
+  Category                                                        Category?             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  User                                                            User                  @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  CatalogItemAssembly_CatalogItemAssembly_assemblyIdToCatalogItem CatalogItemAssembly[] @relation("CatalogItemAssembly_assemblyIdToCatalogItem")
+  CatalogItemAssembly_CatalogItemAssembly_itemIdToCatalogItem     CatalogItemAssembly[] @relation("CatalogItemAssembly_itemIdToCatalogItem")
+  CatalogItemLabor                                                CatalogItemLabor[]
+  Checklist                                                       Checklist[]
+
+  @@index([categoryId])
+}
+
+model CatalogItemAssembly {
+  id                                                      String      @id @default(dbgenerated("nanoid(24)"))
+  assemblyId                                              String
+  itemId                                                  String
+  quantity                                                Float       @default(1)
+  createdAt                                               DateTime    @default(now())
+  updatedAt                                               DateTime
+  CatalogItem_CatalogItemAssembly_assemblyIdToCatalogItem CatalogItem @relation("CatalogItemAssembly_assemblyIdToCatalogItem", fields: [assemblyId], references: [id], onDelete: Cascade)
+  CatalogItem_CatalogItemAssembly_itemIdToCatalogItem     CatalogItem @relation("CatalogItemAssembly_itemIdToCatalogItem", fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([assemblyId])
+  @@index([itemId])
+}
+
+model CatalogItemLabor {
+  id          String      @id @default(dbgenerated("nanoid(24)"))
+  laborId     String
+  itemId      String
+  quantity    Float       @default(1)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime
+  CatalogItem CatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  Labor       Labor       @relation(fields: [laborId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@index([laborId])
+}
+
+model Categorizable {
+  id                String   @id @default(dbgenerated("nanoid(24)"))
+  categoryId        String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+  categorizableId   String
+  categorizableType String
+  Category          Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categorizableId])
+  @@index([categoryId])
+}
+
+model Category {
+  id               String          @id @default(dbgenerated("nanoid(24)"))
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime
+  title            String
+  order            Int             @default(0)
+  parentCategoryId String?
+  CatalogItem      CatalogItem[]
+  Categorizable    Categorizable[]
+  Labor            Labor[]
+
+  @@index([order])
+}
+
+model Checklist {
+  id          String      @id @default(dbgenerated("nanoid(24)"))
+  name        String
+  itemId      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime
+  CatalogItem CatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+model CompleteVisit {
+  id              String              @id @default(dbgenerated("nanoid(24)"))
+  visitId         String              @unique
+  userCreatedId   String
+  status          CompleteVisitStatus @default(JOB_COMPLETE)
+  fromDateTime    DateTime
+  toDateTime      DateTime
+  totalExpenses   Float?
+  workDescription String?
+  nextSteps       String?
+  comment         String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime
+  User            User                @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  Visit           Visit               @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([status], type: Hash)
+  @@index([userCreatedId], type: Hash)
+  @@index([visitId], type: Hash)
+}
+
+model CustomRules {
+  id          String         @id @default(dbgenerated("nanoid(24)"))
+  key         CustomRulesKey
+  value       Json
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime
+}
+
+model EventLog {
+  id            String               @id @default(dbgenerated("nanoid(24)"))
+  type          GraphQLOperationType @default(MUTATION)
+  operationName String
+  inputData     Json?
+  resultData    Json?
+  createdBy     String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime
+
+  @@index([operationName])
+}
+
+model Feedback {
+  id                                String           @id @default(dbgenerated("nanoid(24)"))
+  serviceId                         String           @unique
+  userSubmitId                      String?
+  userCreatedId                     String
+  submittedAt                       DateTime?
+  rating                            Int?
+  status                            FeedbackStatus   @default(OPEN)
+  tags                              Json?
+  comment                           String?
+  channel                           FeedbackChannel? @default(WEB)
+  createdAt                         DateTime         @default(now())
+  updatedAt                         DateTime
+  dismissAt                         DateTime?
+  isActuallySubmitted               Boolean?         @default(false)
+  Service                           Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User_Feedback_userCreatedIdToUser User             @relation("Feedback_userCreatedIdToUser", fields: [userCreatedId], references: [id])
+  User_Feedback_userSubmitIdToUser  User?            @relation("Feedback_userSubmitIdToUser", fields: [userSubmitId], references: [id])
+
+  @@index([serviceId])
+  @@index([userCreatedId])
+  @@index([userSubmitId])
+}
+
+model Flow {
+  id         String       @id @default(dbgenerated("nanoid(24)"))
+  name       String
+  type       FlowType
+  version    Int?         @default(1)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime
+  FlowStep   FlowStep[]
+  Onboarding Onboarding[]
+}
+
+model FlowStep {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  name      String
+  flowId    String?
+  model     String?
+  order     Int?     @default(1)
+  payload   Json?
+  rule      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Flow      Flow?    @relation(fields: [flowId], references: [id], onDelete: Cascade)
+}
+
+model Goal {
+  id            String      @id @default(dbgenerated("nanoid(24)"))
+  title         String
+  membershipId  String
+  userCreatedId String
+  onboardingId  String?
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+  Membership    Membership  @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  Onboarding    Onboarding? @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  User          User        @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  @@index([membershipId])
+  @@index([onboardingId])
+  @@index([userCreatedId])
+}
+
+model GoogleCalendarEvent {
+  id                String    @id @default(dbgenerated("nanoid(24)"))
+  eventId           String
+  status            String?
+  fromDateTime      DateTime
+  toDateTime        DateTime
+  htmlLink          String?
+  hangoutLink       String?
+  title             String?
+  description       String?
+  creator           String?
+  organizer         String?
+  attendees         Json?
+  recurrence        Json?
+  fromUserId        String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  eventType         String?
+  originalStartTime DateTime?
+  recurringEventId  String?
+  validUntil        DateTime?
+  isAllDay          Boolean?  @default(false)
+  timeZone          String?
+  User              User      @relation(fields: [fromUserId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([fromUserId])
+}
+
+model GoogleNotiChannel {
+  id          String    @id @default(dbgenerated("nanoid(24)"))
+  userId      String    @unique
+  channelId   String
+  kind        String
+  resourceId  String
+  resourceUri String
+  token       String?
+  expiryDate  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model GoogleTokens {
+  id           String    @id @default(dbgenerated("nanoid(24)"))
+  userId       String    @unique
+  state        String
+  accessToken  String?
+  refreshToken String?
+  scope        String?
+  tokenType    String?
+  expiryDate   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
+  consentEmail String?
+  User         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model HomePlan {
+  id                   String      @id @default(dbgenerated("nanoid(24)"))
+  membershipId         String
+  showPlanWelcome      Boolean     @default(true)
+  isHomePlanReviewed   Boolean     @default(false)
+  isHomeReportReviewed Boolean     @default(false)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime
+  Action               Action[]
+  Membership           Membership  @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  Onboarding           Onboarding?
+
+  @@index([membershipId])
+}
+
+model InternalComment {
+  id                    String            @id @default(dbgenerated("nanoid(24)"))
+  serviceId             String
+  authorId              String
+  plainBody             String
+  replyToId             String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime
+  body                  String?
+  User                  User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  InternalComment       InternalComment?  @relation("InternalCommentToInternalComment", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_InternalComment InternalComment[] @relation("InternalCommentToInternalComment")
+  Service               Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  LinkPreview           LinkPreview[]
+  PinnedComment         PinnedComment[]
+  ReviewUpdate          ReviewUpdate[]
+
+  @@index([authorId])
+  @@index([serviceId])
+}
+
+model Inventory {
+  id                   String                @id @default(dbgenerated("nanoid(24)"))
+  name                 String
+  spaceId              String
+  userCreatedId        String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime
+  Space                Space                 @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  User                 User                  @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  InventoryInformation InventoryInformation?
+}
+
+model InventoryInformation {
+  id                       String    @id @default(dbgenerated("nanoid(24)"))
+  inventoryId              String    @unique
+  userCreatedId            String
+  utility                  String?
+  manufacturer             String?
+  model                    String?
+  modelNumber              String?
+  serialNumber             String?
+  materialOrSpecs          String?
+  dateManufactured         DateTime?
+  approximateAge           String?
+  typicalWarrantyPeriod    String?
+  expectedLifeTimeDuration String?
+  category                 String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime
+  Inventory                Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  User                     User      @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id            String         @id @default(dbgenerated("nanoid(24)"))
+  invoiceId     String
+  invoiceNumber String?
+  source        InvoiceSource?
+  status        String?
+  total         Float?
+  date          DateTime?
+  serviceId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  Service       Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model Item {
+  id             String        @id @default(dbgenerated("nanoid(24)"))
+  title          String
+  description    String
+  price          Float?
+  itemTypeId     String
+  itemCategoryId String?
+  SKU            String?
+  isAllowRoutine Boolean?      @default(true)
+  userCreatedId  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime
+  ActionItems    ActionItems[]
+  ItemCategory   ItemCategory? @relation(fields: [itemCategoryId], references: [id], onDelete: Cascade)
+  ItemType       ItemType      @relation(fields: [itemTypeId], references: [id], onDelete: Cascade)
+  User           User?         @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([isAllowRoutine])
+  @@index([itemCategoryId])
+  @@index([itemTypeId])
+  @@index([userCreatedId])
+}
+
+model ItemCategory {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  title     String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Item      Item[]
+}
+
+model ItemEvents {
+  id        String         @id @default(dbgenerated("nanoid(24)"))
+  oldData   Json?
+  newData   Json?
+  userId    String?
+  type      ItemEventType? @default(CREATE)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime
+
+  @@index([type])
+  @@index([userId])
+}
+
+model ItemType {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  itemName  String
+  itemKey   String   @unique
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Item      Item[]
+}
+
+model Labor {
+  id               String             @id @default(dbgenerated("nanoid(24)"))
+  name             String
+  skillId          String?
+  cost             Float?
+  price            Float?
+  unitType         UnitType?          @default(HOUR)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  categoryId       String?
+  markup           Float?
+  CatalogItemLabor CatalogItemLabor[]
+  Category         Category?          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  Skill            Skill?             @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@index([skillId])
+}
+
+model LastServiceMessage {
+  id            String          @id @default(dbgenerated("nanoid(24)"))
+  serviceId     String          @unique
+  plainBody     String?
+  userCreatedId String?
+  viaEmail      Boolean?        @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  viaChannel    MessageViaType? @default(WEB)
+  body          String?
+  Service       Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User          User?           @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  @@index([userCreatedId])
+  @@index([viaChannel])
+  @@index([viaEmail])
+}
+
+model LineItem {
+  id            String   @id @default(dbgenerated("nanoid(24)"))
+  title         String
+  description   String?
+  userCreatedId String
+  price         Float?
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  serviceId     String
+  Service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User          User     @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  @@index([userCreatedId])
+}
+
+model LinkPreview {
+  id                String           @id @default(dbgenerated("nanoid(24)"))
+  url               String
+  domain            String
+  title             String?
+  description       String?
+  ogTitle           String?
+  ogImage           String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime
+  internalCommentId String?
+  serviceMessageId  String?
+  InternalComment   InternalComment? @relation(fields: [internalCommentId], references: [id], onDelete: Cascade)
+  ServiceMessage    ServiceMessage?  @relation(fields: [serviceMessageId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([serviceMessageId])
+  @@index([updatedAt(sort: Desc)])
+}
+
+model ListItem {
+  id             String             @id @default(dbgenerated("nanoid(24)"))
+  title          String
+  description    String?
+  userCreatedId  String
+  placeId        String?
+  status         ListItemStatus?    @default(TODO)
+  order          Int                @default(0)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime
+  isImportant    Boolean            @default(false)
+  membershipId   String?
+  onboardingId   String?
+  source         ListItemSource?    @default(LIST)
+  frequency      ListItemFrequency? @default(ONCE)
+  maxPrice       Float?
+  minPrice       Float?
+  priority       ListItemPriority?  @default(THIS_MONTH)
+  Membership     Membership?        @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  Onboarding     Onboarding?        @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  Place          Place?             @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  User           User               @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  ListItemLinker ListItemLinker[]
+
+  @@index([membershipId])
+  @@index([onboardingId])
+  @@index([placeId])
+  @@index([userCreatedId])
+}
+
+model ListItemLinker {
+  id         String   @id @default(dbgenerated("nanoid(24)"))
+  listItemId String
+  type       String
+  linkId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  ListItem   ListItem @relation(fields: [listItemId], references: [id], onDelete: Cascade)
+
+  @@index([listItemId])
+}
+
+model MailTemplate {
+  id            String            @id @default(dbgenerated("nanoid(24)"))
+  name          EmailTemplateName
+  fileName      String
+  fromEmail     String
+  fromEmailName String
+  description   String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime
+}
+
+model Market {
+  id            String          @id @default(dbgenerated("nanoid(24)"))
+  name          String
+  key           String
+  order         Int             @default(1)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  AccountMarket AccountMarket[]
+  Place         Place[]
+}
+
+model MeetLink {
+  id            String          @id @default(dbgenerated("nanoid(24)"))
+  userCreatedId String
+  meetType      MeetLinkType?   @default(SCHEDULE)
+  url           String          @unique
+  expiryDate    DateTime
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  User          User            @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  ScheduleEvent ScheduleEvent[]
+
+  @@index([meetType], type: Hash)
+  @@index([url], type: Hash)
+  @@index([userCreatedId], type: Hash)
+}
+
+model Membership {
+  id                     String         @id @default(dbgenerated("nanoid(24)"))
+  subscriptionId         String
+  placeId                String
+  invoicedSubscriptionId String?
+  isActive               Boolean        @default(true)
+  activeDate             DateTime?      @default(now())
+  inactiveDate           DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime
+  paused                 Boolean?       @default(false)
+  shortId                String?        @unique @default(dbgenerated("short_id('m'::text, 'model_membership_seq'::text, 10000)"))
+  residenceType          ResidenceType? @default(PRIMARY)
+  Action                 Action[]
+  Goal                   Goal[]
+  HomePlan               HomePlan[]
+  ListItem               ListItem[]
+  Place                  Place          @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  Subscription           Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  Onboarding             Onboarding[]
+  Service                Service[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([isActive])
+  @@index([placeId])
+  @@index([subscriptionId])
+}
+
+model MembershipEvents {
+  id                      String            @id @default(dbgenerated("nanoid(24)"))
+  oldData                 Json?
+  newData                 Json?
+  userId                  String?
+  source                  MembershipSource? @default(SYSTEM)
+  type                    MembershipType?   @default(CREATE)
+  refSubscriptionEventsId String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime
+
+  @@index([userId])
+}
+
+model MultipleUploadProgess {
+  id         String               @id @default(dbgenerated("nanoid(24)"))
+  partKey    String               @unique
+  contentUri String
+  fileKey    String
+  fileId     String
+  partNumber String
+  signedUrl  String?
+  status     MultipleUploadStatus @default(IN_PROGRESS)
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime
+
+  @@index([contentUri], type: Hash)
+}
+
+model Note {
+  id            String          @id @default(dbgenerated("nanoid(24)"))
+  itemKey       String
+  itemValue     String
+  plainBody     String?
+  body          String?
+  userCreatedId String
+  viaChannel    MessageViaType? @default(WEB)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  User          User            @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([userCreatedId])
+  @@index([viaChannel])
+}
+
+model OTP {
+  id             String @id @default(dbgenerated("nanoid(24)"))
+  phone          String @unique
+  otp            String
+  expirationTime Int
+}
+
+model Onboarding {
+  id                      String              @id @default(dbgenerated("nanoid(24)"))
+  homeEvaluationServiceId String?             @unique
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime
+  homeplanId              String?             @unique
+  isActive                Boolean?            @default(false)
+  currentStep             OnboardingStepType?
+  status                  OnboardingStatus    @default(OPEN)
+  membershipId            String?
+  version                 Int?                @default(1)
+  completedAt             DateTime?
+  currentStage            OnboardingStage?
+  flowId                  String?
+  Goal                    Goal[]
+  ListItem                ListItem[]
+  Flow                    Flow?               @relation(fields: [flowId], references: [id])
+  Service                 Service?            @relation(fields: [homeEvaluationServiceId], references: [id])
+  HomePlan                HomePlan?           @relation(fields: [homeplanId], references: [id], onDelete: Cascade)
+  Membership              Membership?         @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  OnboardingStep          OnboardingStep[]
+  SpaceDraftList          SpaceDraftList[]
+
+  @@index([status])
+}
+
+model OnboardingStep {
+  id               String                @id @default(dbgenerated("nanoid(24)"))
+  onboardingId     String
+  step             OnboardingStepType    @default(PRODUCT_INTRO)
+  status           OnboardingStepStatus  @default(NOT_STARTED)
+  payload          Json?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime
+  completedAt      DateTime?
+  startedAt        DateTime?
+  dueAt            DateTime?
+  entity           String?
+  linkedServiceId  String?
+  manageExperience OnboardingExperience?
+  memberExperience OnboardingExperience?
+  order            Int?                  @default(1)
+  stage            OnboardingStage?
+  isAuto           Boolean?
+  name             String?
+  Service          Service?              @relation(fields: [linkedServiceId], references: [id])
+  Onboarding       Onboarding            @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+
+  @@index([onboardingId])
+  @@index([status])
+}
+
+model Participant {
+  id                  String   @id @default(dbgenerated("nanoid(24)"))
+  userId              String
+  participantItemId   String
+  participantItemType String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime
+  User                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([participantItemId], type: Hash)
+  @@index([participantItemType], type: Hash)
+  @@index([userId], type: Hash)
+}
+
+model Permission {
+  id                           String                         @id @default(dbgenerated("nanoid(24)"))
+  roleId                       String                         @unique
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime
+  Role                         Role                           @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  PermissionTypesOnPermissions PermissionTypesOnPermissions[]
+}
+
+model PermissionType {
+  id                           String                         @id @default(dbgenerated("nanoid(24)"))
+  name                         String                         @unique
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime
+  PermissionTypesOnPermissions PermissionTypesOnPermissions[]
+}
+
+model PermissionTypesOnPermissions {
+  id               String         @id @default(dbgenerated("nanoid(24)"))
+  permissionId     String
+  permissionTypeId String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime
+  Permission       Permission     @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  PermissionType   PermissionType @relation(fields: [permissionTypeId], references: [id], onDelete: Cascade)
+}
+
+model PinnedComment {
+  id                String          @id @default(dbgenerated("nanoid(24)"))
+  userId            String
+  internalCommentId String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  InternalComment   InternalComment @relation(fields: [internalCommentId], references: [id], onDelete: Cascade)
+  User              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Place {
+  id                  String               @id @default(dbgenerated("nanoid(24)"))
+  name                String?
+  address1            String
+  address2            String?
+  zipcode             String
+  state               String
+  city                String
+  isTest              Boolean?             @default(false)
+  type                PlaceType            @default(HOUSE)
+  placeGroupId        String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime
+  shortId             String?              @unique @default(dbgenerated("short_id('p'::text, 'model_place_seq'::text, 10000)"))
+  marketId            String?
+  estimatedValue      Float?
+  latitude            String?
+  longitude           String?
+  formattedAddress    String?
+  isValid             Boolean?
+  uspsAddress         String?
+  ListItem            ListItem[]
+  Membership          Membership[]
+  Market              Market?              @relation(fields: [marketId], references: [id])
+  PlaceGroup          PlaceGroup?          @relation(fields: [placeGroupId], references: [id], onDelete: Cascade)
+  PlaceDataEnrichment PlaceDataEnrichment?
+  Service             Service[]
+  Space               Space[]
+  UserPlace           UserPlace[]
+
+  @@index([city])
+  @@index([createdAt(sort: Desc)])
+  @@index([type])
+}
+
+model PlaceDataEnrichment {
+  id        String          @id @default(dbgenerated("nanoid(24)"))
+  placeId   String          @unique
+  source    PlaceDataSource
+  payload   Json?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime
+  Place     Place           @relation(fields: [placeId], references: [id], onDelete: Cascade)
+}
+
+model PlaceGroup {
+  id        String         @id @default(dbgenerated("nanoid(24)"))
+  name      String
+  type      PlaceGroupType @default(BUILDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime
+  Place     Place[]
+}
+
+model Plan {
+  id           String         @id @default(dbgenerated("nanoid(24)"))
+  plan         String
+  planKey      String         @unique
+  order        Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  Subscription Subscription[]
+}
+
+model Purpose {
+  id         String       @id @default(dbgenerated("nanoid(24)"))
+  title      String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime
+  Purposeful Purposeful[]
+}
+
+model Purposeful {
+  id             String   @id @default(dbgenerated("nanoid(24)"))
+  purposeId      String
+  serviceId      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+  purposefulId   String?
+  purposefulType String?
+  Purpose        Purpose  @relation(fields: [purposeId], references: [id], onDelete: Cascade)
+  Service        Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([purposeId])
+  @@index([serviceId])
+}
+
+model PushNotificationMessage {
+  id          String               @id @default(dbgenerated("nanoid(24)"))
+  title       String
+  description String
+  type        PushNotificationType @default(REVIEWING)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime
+
+  @@index([createdAt(sort: Desc)])
+}
+
+model ReadMessageTracking {
+  id         String   @id @default(dbgenerated("nanoid(24)"))
+  type       String
+  trackingId String
+  userReadId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  User       User     @relation(fields: [userReadId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([userReadId])
+}
+
+model ReviewUpdate {
+  id                       String                     @id @default(dbgenerated("nanoid(24)"))
+  plainBody                String?
+  totalAttachment          Int?                       @default(0)
+  internalCommentId        String?
+  serviceMessageId         String?
+  serviceId                String?
+  type                     ReviewUpdateType?          @default(MENTION)
+  group                    ReviewUpdateGroup?         @default(USER)
+  userCreatedId            String?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime
+  timeProposalId           String?
+  visitId                  String?
+  body                     String?
+  taskId                   String?
+  scheduleEventId          String?
+  InternalComment          InternalComment?           @relation(fields: [internalCommentId], references: [id], onDelete: Cascade)
+  ScheduleEvent            ScheduleEvent?             @relation(fields: [scheduleEventId], references: [id], onDelete: Cascade)
+  Service                  Service?                   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  ServiceMessage           ServiceMessage?            @relation(fields: [serviceMessageId], references: [id], onDelete: Cascade)
+  Task                     Task?                      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  TimeProposal             TimeProposal?              @relation(fields: [timeProposalId], references: [id], onDelete: Cascade)
+  User                     User?                      @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  Visit                    Visit?                     @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  ReviewUpdateNotification ReviewUpdateNotification[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([internalCommentId])
+  @@index([scheduleEventId])
+  @@index([serviceId])
+  @@index([serviceMessageId])
+  @@index([type])
+  @@index([userCreatedId])
+}
+
+model ReviewUpdateNotification {
+  id             String       @id @default(dbgenerated("nanoid(24)"))
+  reviewUpdateId String
+  userId         String
+  wasRead        Boolean?     @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  ReviewUpdate   ReviewUpdate @relation(fields: [reviewUpdateId], references: [id], onDelete: Cascade)
+  User           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewUpdateId])
+  @@index([userId])
+  @@index([wasRead])
+}
+
+model ReviewUpdateNotificationExtended {
+  id                         String   @id @default(dbgenerated("nanoid(24)"))
+  reviewUpdateNotificationId String
+  reviewUpdateId             String
+  userId                     String
+  wasRead                    Boolean? @default(false)
+  serviceIsDeleted           Boolean? @default(false)
+  reviewUpdateJSON           Json?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime
+
+  @@index([reviewUpdateId])
+  @@index([reviewUpdateNotificationId])
+  @@index([serviceIsDeleted])
+  @@index([userId])
+  @@index([wasRead])
+}
+
+model Role {
+  id               String             @id @default(dbgenerated("nanoid(24)"))
+  role             RoleType           @default(OWNER)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  Permission       Permission?
+  User             User[]
+  UsersBelongRoles UsersBelongRoles[]
+}
+
+model ScheduleEvent {
+  id            String         @id @default(dbgenerated("nanoid(24)"))
+  fromDateTime  DateTime
+  toDateTime    DateTime
+  userCreatedId String
+  title         String
+  description   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  meetLinkId    String?
+  isDeleted     Boolean        @default(false)
+  eventId       String?
+  isAllDay      Boolean?       @default(false)
+  recurrence    String?
+  validUntil    DateTime?
+  ReviewUpdate  ReviewUpdate[]
+  MeetLink      MeetLink?      @relation(fields: [meetLinkId], references: [id])
+  User          User           @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  @@index([fromDateTime], type: Hash)
+  @@index([meetLinkId], type: Hash)
+  @@index([toDateTime], type: Hash)
+  @@index([userCreatedId], type: Hash)
+}
+
+model Service {
+  id                                                        String                         @id @default(dbgenerated("nanoid(24)"))
+  subject                                                   String
+  placeId                                                   String
+  userCreated                                               String
+  requesterId                                               String
+  assigneeId                                                String?
+  type                                                      ServiceType?
+  statusId                                                  String
+  reasonCode                                                ReasonCodeType?
+  categoryId                                                String?
+  zendeskPriority                                           PriorityType                   @default(normal)
+  SKU                                                       String?
+  membershipId                                              String?
+  createdAt                                                 DateTime                       @default(now())
+  updatedAt                                                 DateTime
+  isDeleted                                                 Boolean                        @default(false)
+  description                                               String?
+  cancelledAt                                               DateTime?
+  completedAt                                               DateTime?
+  shortId                                                   String?
+  dueDateAt                                                 DateTime?
+  managerId                                                 String?
+  serviceType                                               ServiceTypeNew?
+  serviceValue                                              Float?
+  vendorId                                                  String?
+  orderNumber                                               String?                        @unique @default(dbgenerated("short_id('ORD'::text, 'model_service_seq'::text, 10000)"))
+  Feedback                                                  Feedback?
+  InternalComment                                           InternalComment[]
+  Invoice                                                   Invoice[]
+  LastServiceMessage                                        LastServiceMessage?
+  LineItem                                                  LineItem[]
+  Onboarding                                                Onboarding?
+  OnboardingStep                                            OnboardingStep[]
+  Purposeful                                                Purposeful[]
+  ReviewUpdate                                              ReviewUpdate[]
+  User_Service_assigneeIdToUser                             User?                          @relation("Service_assigneeIdToUser", fields: [assigneeId], references: [id])
+  ServiceCategory                                           ServiceCategory?               @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  User_Service_managerIdToUser                              User?                          @relation("Service_managerIdToUser", fields: [managerId], references: [id])
+  Membership                                                Membership?                    @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  Place                                                     Place                          @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  User_Service_requesterIdToUser                            User                           @relation("Service_requesterIdToUser", fields: [requesterId], references: [id], onDelete: Cascade)
+  ServiceStatus                                             ServiceStatus                  @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  User_Service_userCreatedToUser                            User                           @relation("Service_userCreatedToUser", fields: [userCreated], references: [id], onDelete: Cascade)
+  Account                                                   Account?                       @relation(fields: [vendorId], references: [id])
+  ServiceAction                                             ServiceAction[]
+  ServiceAge                                                ServiceAge[]
+  ServiceMessage                                            ServiceMessage[]
+  ServiceNewComment                                         ServiceNewComment[]
+  ServiceRelation_ServiceRelation_relatedServiceIdToService ServiceRelation[]              @relation("ServiceRelation_relatedServiceIdToService")
+  ServiceRelation_ServiceRelation_serviceIdToService        ServiceRelation[]              @relation("ServiceRelation_serviceIdToService")
+  ServiceTracking                                           ServiceTracking[]
+  ServiceUpdates                                            ServiceUpdates[]
+  ServiceVendor                                             ServiceVendor[]
+  SubscribeNotificationService                              SubscribeNotificationService[]
+  Visit                                                     Visit[]
+  VisitExpense                                              VisitExpense[]
+
+  @@index([assigneeId])
+  @@index([categoryId])
+  @@index([createdAt(sort: Desc)])
+  @@index([isDeleted])
+  @@index([placeId])
+  @@index([requesterId])
+  @@index([statusId])
+  @@index([zendeskPriority])
+}
+
+model ServiceAction {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  actionId  String
+  serviceId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Action    Action   @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  Service   Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([actionId])
+  @@index([serviceId])
+}
+
+model ServiceAge {
+  id            String        @id @default(dbgenerated("nanoid(24)"))
+  serviceId     String
+  statusId      String
+  startedAt     DateTime      @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  Service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  ServiceStatus ServiceStatus @relation(fields: [statusId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([statusId])
+}
+
+model ServiceCategory {
+  id               String    @id @default(dbgenerated("nanoid(24)"))
+  title            String
+  parentCategoryId String?
+  order            Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Service          Service[]
+
+  @@index([order])
+}
+
+model ServiceMessage {
+  id                     String                   @id @default(dbgenerated("nanoid(24)"))
+  serviceId              String
+  plainBody              String?
+  userCreatedId          String?
+  viaEmail               Boolean?                 @default(false)
+  isServiceDetail        Boolean?                 @default(false)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  extends                Json?
+  viaChannel             MessageViaType?          @default(WEB)
+  body                   String?
+  LinkPreview            LinkPreview[]
+  ReviewUpdate           ReviewUpdate[]
+  Service                Service                  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User                   User?                    @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  ServiceNewComment      ServiceNewComment[]
+  UserReadServiceMessage UserReadServiceMessage[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([serviceId])
+  @@index([userCreatedId])
+  @@index([viaChannel])
+  @@index([viaEmail])
+}
+
+model ServiceNewComment {
+  id               String          @id @default(dbgenerated("nanoid(24)"))
+  notifyTo         NotifyToType
+  serviceId        String
+  messageIds       String[]
+  serviceMessageId String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime
+  Service          Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  ServiceMessage   ServiceMessage? @relation(fields: [serviceMessageId], references: [id], onDelete: Cascade)
+
+  @@index([notifyTo])
+  @@index([serviceId])
+  @@index([serviceMessageId])
+}
+
+model ServiceRelation {
+  id                                                String              @id @default(dbgenerated("nanoid(24)"))
+  serviceId                                         String
+  relatedServiceId                                  String
+  type                                              ServiceRelationType @default(RELATED)
+  createdAt                                         DateTime            @default(now())
+  updatedAt                                         DateTime
+  Service_ServiceRelation_relatedServiceIdToService Service             @relation("ServiceRelation_relatedServiceIdToService", fields: [relatedServiceId], references: [id], onDelete: Cascade)
+  Service_ServiceRelation_serviceIdToService        Service             @relation("ServiceRelation_serviceIdToService", fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([relatedServiceId], type: Hash)
+  @@index([serviceId], type: Hash)
+}
+
+model ServiceStatus {
+  id               String       @id @default(dbgenerated("nanoid(24)"))
+  status           String
+  statusKey        String       @unique
+  customerLabel    String
+  customerLabelKey String
+  SLA              Int?
+  order            Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime
+  isDeleted        Boolean      @default(false)
+  Service          Service[]
+  ServiceAge       ServiceAge[]
+
+  @@index([order])
+}
+
+model ServiceTracking {
+  id        String             @id @default(dbgenerated("nanoid(24)"))
+  userId    String
+  serviceId String
+  key       ServiceTrackingKey @default(CANCEL_REASON)
+  value     Json
+  createdAt DateTime           @default(now())
+  updatedAt DateTime
+  Service   Service            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@index([serviceId])
+  @@index([userId])
+}
+
+model ServiceUpdates {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  userId    String
+  serviceId String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([userId])
+}
+
+model ServiceVendor {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  serviceId String
+  vendorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  Account   Account  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([vendorId])
+}
+
+model Skill {
+  id                String              @id @default(dbgenerated("nanoid(24)"))
+  name              String
+  order             Int?                @default(1)
+  Labor             Labor[]
+  SkillOfTechnician SkillOfTechnician[]
+}
+
+model SkillOfTechnician {
+  id           String     @id @default(dbgenerated("nanoid(24)"))
+  technicianId String
+  skillId      String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime
+  Skill        Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  Technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([skillId])
+  @@index([technicianId])
+}
+
+model Space {
+  id            String      @id @default(dbgenerated("nanoid(24)"))
+  name          String
+  placeId       String
+  userCreatedId String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+  Inventory     Inventory[]
+  Place         Place       @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  User          User        @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+}
+
+model SpaceCategory {
+  id               String             @id @default(dbgenerated("nanoid(24)"))
+  name             String
+  order            Int                @default(0)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  SpaceDefaultList SpaceDefaultList[]
+
+  @@index([order])
+}
+
+model SpaceDefaultList {
+  id            String         @id @default(dbgenerated("nanoid(24)"))
+  name          String
+  description   String?
+  categoryId    String?
+  userCreatedId String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  SpaceCategory SpaceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  User          User?          @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+}
+
+model SpaceDraftList {
+  id            String      @id @default(dbgenerated("nanoid(24)"))
+  name          String
+  description   String?
+  userCreatedId String?
+  onboardingId  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime
+  Onboarding    Onboarding? @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  User          User?       @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+}
+
+model SubscribeNotificationService {
+  id          String   @id @default(dbgenerated("nanoid(24)"))
+  userId      String
+  serviceId   String
+  isSubscribe Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  Service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                     String                 @id @default(dbgenerated("nanoid(24)"))
+  accountId              String
+  statusId               String
+  membershipUnits        Int                    @default(1)
+  mrr                    Int                    @default(0)
+  invoicedSubscriptionId String?
+  startedAt              DateTime               @default(now())
+  endedAt                DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime
+  mode                   SubscriptionMode?      @default(CUSTOM)
+  cancelledAt            DateTime?
+  pausedAt               DateTime?
+  shortId                String?                @unique @default(dbgenerated("short_id('sub'::text, 'model_subscription_seq'::text, 10000)"))
+  interval               CYCLE?                 @default(MONTHLY)
+  planId                 String?
+  Membership             Membership[]
+  Account                Account                @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  Plan                   Plan?                  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  SubscriptionStatus     SubscriptionStatus     @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  SubscriptionTracking   SubscriptionTracking[]
+
+  @@index([accountId])
+  @@index([createdAt(sort: Desc)])
+  @@index([statusId])
+}
+
+model SubscriptionEvents {
+  id             String              @id @default(dbgenerated("nanoid(24)"))
+  oldData        Json?
+  newData        Json?
+  userId         String?
+  subscriptionId String?
+  source         SubscriptionSource? @default(SYSTEM)
+  type           SubscriptionType?   @default(CREATE)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime
+
+  @@index([userId])
+}
+
+model SubscriptionStatus {
+  id           String         @id @default(dbgenerated("nanoid(24)"))
+  status       String
+  statusKey    String         @unique
+  order        Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  Subscription Subscription[]
+
+  @@index([status])
+}
+
+model SubscriptionTracking {
+  id             String                  @id @default(dbgenerated("nanoid(24)"))
+  userId         String
+  subscriptionId String
+  key            SubscriptionTrackingKey @default(CANCEL_REASONS)
+  value          Json
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime
+  Subscription   Subscription            @relation(fields: [subscriptionId], references: [id])
+  User           User                    @relation(fields: [userId], references: [id])
+
+  @@index([key])
+  @@index([subscriptionId])
+  @@index([userId])
+}
+
+model Tag {
+  id        String     @id @default(dbgenerated("nanoid(24)"))
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  Taggable  Taggable[]
+}
+
+model Taggable {
+  id           String   @id @default(dbgenerated("nanoid(24)"))
+  tagId        String
+  taggableType String
+  taggableId   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  Tag          Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([tagId, taggableId])
+  @@index([tagId])
+  @@index([taggableId])
+}
+
+model Task {
+  id                              String         @id @default(dbgenerated("nanoid(24)"))
+  shortId                         String?        @unique @default(dbgenerated("short_id('t'::text, 'model_task_seq'::text, 10000)"))
+  description                     String?
+  dueDate                         DateTime
+  assigneeId                      String
+  itemKey                         String
+  itemId                          String
+  status                          TaskStatus?    @default(TODO)
+  createdAt                       DateTime       @default(now())
+  updatedAt                       DateTime
+  subject                         String
+  taskCategory                    TaskCategory?  @default(FOLLOW_UP)
+  completedAt                     DateTime?
+  userCompletedId                 String?
+  userCreatedId                   String?
+  ReviewUpdate                    ReviewUpdate[]
+  User_Task_assigneeIdToUser      User           @relation("Task_assigneeIdToUser", fields: [assigneeId], references: [id])
+  User_Task_userCompletedIdToUser User?          @relation("Task_userCompletedIdToUser", fields: [userCompletedId], references: [id], onDelete: Cascade)
+  User_Task_userCreatedIdToUser   User?          @relation("Task_userCreatedIdToUser", fields: [userCreatedId], references: [id], onDelete: Cascade)
+
+  @@index([assigneeId])
+  @@index([createdAt(sort: Desc)])
+  @@index([userCompletedId])
+  @@index([userCreatedId])
+}
+
+model Technician {
+  id                String              @id @default(dbgenerated("nanoid(24)"))
+  userId            String              @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  availability      Boolean             @default(false)
+  type              TechnicianType?     @default(IN_HOUSE)
+  SkillOfTechnician SkillOfTechnician[]
+  User              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TimePreference {
+  id                 String               @id @default(dbgenerated("nanoid(24)"))
+  userCreatedId      String
+  visitId            String
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  isActive           Boolean              @default(true)
+  User               User                 @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  Visit              Visit                @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  TimePreferenceItem TimePreferenceItem[]
+
+  @@index([userCreatedId])
+  @@index([visitId])
+}
+
+model TimePreferenceItem {
+  id               String         @id @default(dbgenerated("nanoid(24)"))
+  fromDateTime     DateTime
+  toDateTime       DateTime
+  timePreferenceId String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime
+  TimePreference   TimePreference @relation(fields: [timePreferenceId], references: [id], onDelete: Cascade)
+
+  @@index([timePreferenceId])
+}
+
+model TimeProposal {
+  id            String             @id @default(dbgenerated("nanoid(24)"))
+  fromDateTime  DateTime?
+  toDateTime    DateTime?
+  userCreatedId String
+  visitId       String
+  status        TimeProposalStatus
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime
+  ReviewUpdate  ReviewUpdate[]
+  User          User               @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  Visit         Visit              @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([userCreatedId])
+  @@index([visitId])
+}
+
+model UserAccount {
+  id                  String   @id @default(dbgenerated("nanoid(24)"))
+  accountId           String
+  userId              String
+  allowAccessInvoiced Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime
+  isPrimaryContact    Boolean  @default(false)
+  Account             Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  User                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([userId])
+}
+
+model UserActivity {
+  id        String           @id @default(dbgenerated("nanoid(24)"))
+  userId    String
+  type      UserActivityType @default(SIGN_IN)
+  data      Json?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime
+
+  @@index([userId])
+}
+
+model UserDeviceToken {
+  id          String   @id @default(dbgenerated("nanoid(24)"))
+  deviceToken String
+  deviceId    String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+}
+
+model UserPlace {
+  id        String    @id @default(dbgenerated("nanoid(24)"))
+  userId    String
+  placeId   String
+  placeRole PlaceRole @default(OWNER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  Place     Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([placeId])
+  @@index([placeRole])
+  @@index([userId])
+}
+
+model UserProfile {
+  id        String         @id @default(dbgenerated("nanoid(24)"))
+  userId    String
+  key       UserProfileKey
+  value     Json
+  createdAt DateTime       @default(now())
+  updatedAt DateTime
+  User      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserReadServiceMessage {
+  id                String         @id @default(dbgenerated("nanoid(24)"))
+  serviceMessageId  String
+  userReadMessageId String
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime
+  ServiceMessage    ServiceMessage @relation(fields: [serviceMessageId], references: [id], onDelete: Cascade)
+  User              User           @relation(fields: [userReadMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceMessageId, userReadMessageId])
+  @@index([createdAt(sort: Desc)])
+  @@index([serviceMessageId])
+  @@index([userReadMessageId])
+}
+
+model UserResetPassword {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  resetKey  String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UsersBelongRoles {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roleId])
+  @@index([userId])
+}
+
+model Vendor {
+  id            String      @id @default(dbgenerated("nanoid(24)"))
+  accountId     String      @unique
+  type          VendorType? @default(IN_HOUSE)
+  arrivalWindow Float?      @default(2)
+  Account       Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+}
+
+model View {
+  id          String        @id @default(dbgenerated("nanoid(24)"))
+  name        String
+  key         String
+  payload     Json?
+  type        ViewType      @default(SERVICE)
+  order       Int           @default(1)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  ViewDefault ViewDefault[]
+}
+
+model ViewDefault {
+  id        String   @id @default(dbgenerated("nanoid(24)"))
+  viewId    String
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  User      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  View      View     @relation(fields: [viewId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([viewId])
+}
+
+model Visit {
+  id              String            @id @default(dbgenerated("nanoid(24)"))
+  fromDateTime    DateTime?
+  toDateTime      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  acceptAt        DateTime?
+  cancelAt        DateTime?
+  declineAt       DateTime?
+  status          VisitStatus?
+  userCreatedId   String?
+  arrivalWindow   Float?
+  instruction     String?
+  serviceId       String?
+  meetLink        String?
+  type            TypeOfVisit?      @default(ONSITE)
+  CompleteVisit   CompleteVisit?
+  ReviewUpdate    ReviewUpdate[]
+  TimePreference  TimePreference[]
+  TimeProposal    TimeProposal[]
+  Service         Service?          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User            User?             @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  VisitExpense    VisitExpense[]
+  VisitReport     VisitReport?
+  VisitTechnician VisitTechnician[]
+
+  @@index([userCreatedId])
+}
+
+model VisitEvents {
+  id        String     @id @default(dbgenerated("nanoid(24)"))
+  oldData   Json?
+  newData   Json?
+  userId    String?
+  type      VisitType? @default(CREATE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  visitId   String?
+
+  @@index([userId])
+}
+
+model VisitExpense {
+  id               String               @id @default(dbgenerated("nanoid(24)"))
+  name             String?
+  totalExpense     Float?
+  subTotalExpense  Float?
+  taxAmount        Float?               @default(0)
+  serviceId        String
+  visitId          String
+  userCreatedId    String
+  dateTime         DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime
+  actionStatus     ExpenseActionStatus? @default(NOT_STARTED)
+  Service          Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  User             User                 @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  Visit            Visit                @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  VisitExpenseItem VisitExpenseItem[]
+
+  @@index([serviceId], type: Hash)
+  @@index([userCreatedId], type: Hash)
+  @@index([visitId], type: Hash)
+}
+
+model VisitExpenseItem {
+  id             String       @id @default(dbgenerated("nanoid(24)"))
+  visitExpenseId String
+  name           String
+  quantity       Float        @default(1)
+  price          Float?       @default(0)
+  totalExpense   Float
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  VisitExpense   VisitExpense @relation(fields: [visitExpenseId], references: [id], onDelete: Cascade)
+
+  @@index([visitExpenseId], type: Hash)
+}
+
+model VisitReport {
+  id              String             @id @default(dbgenerated("nanoid(24)"))
+  latitude        String?
+  longitude       String?
+  fromDateTime    DateTime?
+  toDateTime      DateTime?
+  visitId         String             @unique
+  userCreatedId   String?
+  type            VisitReportType    @default(VISIT_START)
+  status          VisitReportStatus?
+  totalExpenses   Float?
+  workDescription String?
+  nextSteps       String?
+  comment         String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime
+  User            User?              @relation(fields: [userCreatedId], references: [id], onDelete: Cascade)
+  Visit           Visit              @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([userCreatedId], type: Hash)
+  @@index([visitId], type: Hash)
+}
+
+model VisitTechnician {
+  id           String    @id @default(dbgenerated("nanoid(24)"))
+  visitId      String
+  userId       String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
+  fromDateTime DateTime?
+  toDateTime   DateTime?
+  User         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Visit        Visit     @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([visitId])
+}
+
+model prefixsequences {
+  prefix  String
+  seqname String @unique
+
+  @@id([prefix, seqname])
+}
+
+model zipcode {
+  id              String   @id @default(dbgenerated("nanoid(24)"))
+  city            String
+  in_service_area Boolean? @default(false)
+  state_id        String
+  state_name      String
+  zipcode         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+
+  @@index([city], type: Hash)
+  @@index([state_id], type: Hash)
+  @@index([state_name], type: Hash)
+  @@index([zipcode], type: Hash)
+}
+
+enum AccountTrackingKey {
+  ACQUISITION_CHANNEL
+  ACQUISITION_SOURCE
+}
+
+enum AccountType {
+  INDIVIDUAL
+  ORGANIZATION
+  TEST
+}
+
+enum ActionEventType {
+  CREATE
+  UPDATE
+  UPDATE_STATUS
+  DELETE
+  GET_SERVICE
+}
+
+enum ActionPrompt {
+  NEED_ATTENTION
+}
+
+enum ActionStatus {
+  OPEN
+  ACTIVE
+  DISMISSED
+  COMPLETED
+  INCLUDE
+}
+
+enum ActionType {
+  SERVICE_EVENT
+  SERVICE_ROUTINE
+}
+
+enum ActivityType {
+  CREATE
+  UPDATE_SUBJECT
+  UPDATE_STATUS
+  UPDATE_ASSIGNEE
+  UPDATE_CATEGORY
+  UPDATE_PRIORITY
+  UPDATE_REASON_CODE
+  UPDATE_TYPE
+  UPDATE_RECIPIENTS
+  DELETE
+  ADD_NOTE
+  UPDATE_NOTE
+  REMOVE_NOTE
+  ADD_COMMENT
+  UPDATE_COMMENT
+  REMOVE_COMMENT
+  MARK_AS_READ
+  START_TYPING_MESSAGE
+  STOP_TYPING_MESSAGE
+  IS_ONLINE
+  IS_OFFLINE
+  REMOVE_FEEDBACK
+  ADD_SERVICE_NOTE
+  UPDATE_SERVICE_NOTE
+  REMOVE_SERVICE_NOTE
+  ADD_MESSAGE
+  UPDATE_MESSAGE
+  REMOVE_MESSAGE
+  ADD_TASK
+  COMPLETE_TASK
+  UPDATE_TASK
+  REMOVE_TASK
+  UPDATE_MANAGER
+  UPDATE_DUE_DATE
+  UPDATE_DESCRIPTION
+  TIME_PREFERENCE_REQUEST
+  SHARE_TIME_PREFERENCE
+  TIME_PROPOSAL_REQUEST
+  BOOK_VISIT
+  RE_BOOK_VISIT
+  RE_TIME_PROPOSAL_REQUEST
+  RE_ASSIGN_VISIT
+  CANCEL_VISIT
+  DECLINE_VISIT
+  ACCEPT_VISIT
+  UPDATE_INSTRUCTION
+  CHANGE_VISIT_STATUS_FROM_PENDING_TO_EXPIRED
+  CHANGE_VISIT_STATUS_FROM_BOOKED_TO_RUNNING
+  CHANGE_VISIT_STATUS_FROM_RUNNING_TO_COMPLETED
+  UPDATE_SERVICE_CATEGORIES
+  UPDATE_SERVICE_TRADE
+  UPDATE_SERVICE_TYPE
+  UPDATE_SERVICE_PURPOSE
+  UPDATE_SERVICE_VALUE
+  LINK_SERVICE_PARENT
+  LINK_SERVICE_DUPLICATED
+  LINK_SERVICE_RELATED
+  UNLINK_SERVICE_PARENT
+  UNLINK_SERVICE_DUPLICATED
+  UNLINK_SERVICE_RELATED
+  COMPLETE_VISIT
+  CREATE_A_DRAFT_VISIT
+  CREATE_A_HOLD_VISIT
+  CHANGE_VISIT_STATUS_FROM_DRAFT_TO_REQUESTED
+  CHANGE_VISIT_STATUS_FROM_DRAFT_TO_HOLD
+  CHANGE_VISIT_STATUS_FROM_DRAFT_TO_PENDING
+  CHANGE_VISIT_STATUS_FROM_DRAFT_TO_BOOKED
+  CHANGE_VISIT_STATUS_FROM_HOLD_TO_PENDING
+  CHANGE_VISIT_STATUS_FROM_HOLD_TO_BOOKED
+  UPDATE_ARRIVAL_WINDOW
+  START_VISIT
+  ADD_VENDOR_TO_SERVICE
+  REMOVE_VENDOR_FROM_SERVICE
+  UPDATE_VENDOR_FROM_SERVICE
+  REMOVE_VISIT
+  ATTACH_ATTACHMENT_TO_SERVICE
+  DETACH_ATTACHMENT_FROM_SERVICE
+  UPDATE_VENDORS
+  UPDATE_VISIT
+  CHANGE_VISIT_STATUS_FROM_BOOKED_TO_COMPLETED
+}
+
+enum AttachmentType {
+  PHOTO
+  VIDEO
+  FILE
+}
+
+enum CYCLE {
+  ANNUALLY
+  MONTHLY
+  QUARTERLY
+  WEEKLY
+  DAILY
+  EVENT
+  BI_ANNUALLY
+  BI_MONTHLY
+  BI_WEEKLY
+}
+
+enum CalendarEventItemType {
+  VISIT
+  SCHEDULE_EVENT
+  OOO
+  GOOGLE_MEETING
+  GOOGLE_CALENDAR_EVENT
+}
+
+enum CatalogType {
+  SERVICE
+  PRODUCT
+  MATERIAL
+  EQUIPMENT
+}
+
+enum CompleteVisitStatus {
+  JOB_COMPLETE
+  REQUIRES_FOLLOW_UP
+}
+
+enum CustomRulesKey {
+  TECHNICIAN_HOMEVISIT_ONBOARDING
+  TECHNICIAN_HOMEVISIT_ONBOARDING_DEFAULT
+}
+
+enum EmailTemplateName {
+  SERVICE_CONFIRM
+  NEW_MESSAGE
+  NEW_ACTION
+  RESET_PASSWORD
+  CHANGED_PASSWORD
+  CHANGED_EMAIL
+  CHANGED_PHONE
+  REMINDER_24H
+  REMINDER_2H
+  HOMEPLAN_REPORT_SHARED
+  HOMEPLAN_SHARED
+  REPORT_SHARED
+  COMPLETE_REGISTER
+  COMMENT_MENTION
+  PROPOSED_VISIT
+  SHARE_AVAILABILITY
+  FEEDBACK
+  INVITATION
+  UPDATED_SCHEDULE_EVENT
+  CANCELLED_SCHEDULE_EVENT
+  REMINDER_24H_OF_VIRTUAL_VISIT
+  REMINDER_30MIN_OF_VIRTUAL_VISIT
+}
+
+enum ExpenseActionStatus {
+  NOT_STARTED
+  UPLOADING
+  SCANNING
+  COMPLETED
+}
+
+enum FeedbackChannel {
+  MOBILE
+  WEB
+}
+
+enum FeedbackStatus {
+  OPEN
+  COMPLETED
+  DISMISSED
+  INACTIVE
+  EXPIRED
+}
+
+enum FlowType {
+  ACCOUNT
+  PLACE
+  MEMBERSHIP
+}
+
+enum GraphQLOperationType {
+  QUERY
+  MUTATION
+  SUBSCRIPTION
+}
+
+enum InvoiceSource {
+  INVOICED
+}
+
+enum ItemEventType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum ListItemFrequency {
+  ONCE
+  BI_WEEKLY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  BI_ANNUAL
+  ANNUAL
+}
+
+enum ListItemPriority {
+  THIS_MONTH
+  NEXT_MONTH
+  NEXT_3_MONTHS
+  NEXT_6_MONTHS
+  NEXT_12_MONTHS
+  LATER
+}
+
+enum ListItemSource {
+  ONBOARDING
+  LIST
+}
+
+enum ListItemStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+enum MeetLinkType {
+  SCHEDULE
+  INSTANT
+}
+
+enum MembershipSource {
+  SYSTEM
+  WEBHOOK
+}
+
+enum MembershipType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum MessageViaType {
+  EMAIL
+  WEB
+  MOBILE
+}
+
+enum MultipleUploadStatus {
+  IN_PROGRESS
+  FAILED
+  SUCCESS
+}
+
+enum NotifyToType {
+  MANAGER
+  OWNER
+}
+
+enum OnboardingExperience {
+  EMAIL
+  FULL_SCREEN
+  ONBOARING_TILE
+  MANAGE_WIDGET
+}
+
+enum OnboardingPhase {
+  SETUP
+  PREPARATION
+  EVALUATION
+  PERSONALIZE
+}
+
+enum OnboardingStage {
+  SETUP
+  PREPARE
+  PERSONALIZE
+  ACTIVATE
+}
+
+enum OnboardingStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum OnboardingStepStatus {
+  NOT_STARTED
+  STARTED
+  COMPLETED
+  SKIPPED
+}
+
+enum OnboardingStepType {
+  WELCOME
+  GET_STARTED
+  SHARE_AVAILABILITY
+  SHARE_TODO
+  HOME_EVALUATION
+  RECOMMENDATIONS
+  GET_SERVICE
+  RECEIVE_FEEDBACK
+  SHARE_PREFERENCES
+  BOOK_HOME_EVALUATION
+  COMPLETE_HOME_EVALUATION
+  GENERATE_RECOMMENDATIONS
+  ACCEPT_RECOMMENDATIONS
+  REQUEST_FIRST_SERVICE
+  NEXT_STEP
+  GENERATE_HOME_PLAN
+  REVIEW_HOME_PLAN
+  BOOK_FIRST_SERVICE
+  PRODUCT_INTRO
+  SHARE_GOAL
+  COLLECT_TODO_LIST
+  REVIEW_RESULTS
+  SHARE_TIME_PREFERENCE
+  DOWNLOAD_APP
+  SHARE_TODO_LIST
+  MEET_MANAGER
+  CONDUCT_HOME_EVALUATION
+  SHARE_FLIGHT_PLAN
+  PREPARATION
+  EVALUATION
+  SETUP
+  PREPARE
+  PERSONALIZE
+  ACTIVATE
+  SHARE_SPACES
+}
+
+enum PlaceDataSource {
+  REDFIN
+  GOOGLE
+  SMARTY
+  RENTCAST
+}
+
+enum PlaceGroupType {
+  BUILDING
+  CAMPUS
+}
+
+enum PlaceRole {
+  OWNER
+  MANAGER
+  PROPERTY_MANAGER
+  GUEST
+  TENANT
+  SPONSOR
+}
+
+enum PlaceType {
+  CONDO
+  HOUSE
+  BUILDING
+  OFFICE
+}
+
+enum PriorityType {
+  high
+  normal
+}
+
+enum PushNotificationType {
+  NEW_MESSAGE
+  REVIEWING
+  IN_PROGRESS
+  BILLING
+  DONE
+  CANCELLED
+  DEFERRED
+  TIME_PROPOSAL
+  REMINDER_BEFORE_24_H_TIME_PROPOSAL
+  REMINDER_BEFORE_2H_TIME_PROPOSAL
+  FEEDBACK
+  MANAGER_ASSIGNED
+  FIELD_APP_ASSIGNED_TECHNICIAN
+  FIELD_APP_CONFIRMED_BY_OWNER
+  FIELD_APP_RESCHEDULED_VISIT
+  FIELD_APP_CANCELLED_VISIT
+  FIELD_APP_REMINDER_BEFORE_30_MIN_VISIT_START
+  FIELD_APP_TAGGED_TECHNICIAN
+  FILED_APP_STARTED_CALL
+  FILED_APP_INVITED_SCHEDULE_EVENT
+  FILED_APP_UPDATED_SCHEDULE_EVENT
+  FILED_APP_CANCELLED_SCHEDULE_EVENT
+  FILED_APP_REMIND_BEFOR_15_MIN_SCHEDULE_EVENT
+  FILED_APP_ACCEPTED_CALL
+  FILED_APP_DECLINED_CALL
+  FILED_APP_ENDED_CALL
+  TIME_PROPOSAL_OF_VIRTUAL_VISIT
+  REMINDER_BEFORE_24_H_TIME_PROPOSAL_OF_VIRTUAL_VISIT
+  REMINDER_BEFORE_30MIN_TIME_PROPOSAL_OF_VIRTUAL_VISIT
+}
+
+enum ReasonCodeType {
+  Estimate
+  Materials
+  Approval
+  Proposal
+}
+
+enum RelationshipType {
+  CUSTOMER
+  VENDOR
+}
+
+enum ResidenceType {
+  PRIMARY
+  SECONDARY
+  RENTAL
+}
+
+enum ReviewResultStateType {
+  SETUP
+  PREPARING
+  HOME_PLAN
+}
+
+enum ReviewUpdateGroup {
+  USER
+  PLACE
+}
+
+enum ReviewUpdateType {
+  MENTION
+  COMMENT
+  MESSAGE
+  VISIT_TIME_EXPIRED
+  VISIT_TIME_DECLINED
+  TASK
+  TASK_ASSIGNED
+  TASK_COMPLETED
+  TASK_UPDATED
+  SCHEDULE_EVENT_CREATED
+  SCHEDULE_EVENT_UPDATED
+  SCHEDULE_EVENT_DELETED
+  SCHEDULE_EVENT_REMIND_BEFORE_15_MIN
+  SERVICE_CREATED
+}
+
+enum RoleType {
+  MANAGER
+  OWNER
+  ADMIN
+  TECHNICIAN
+}
+
+enum ServiceRelationType {
+  PARENT
+  RELATED
+  DUPLICATED
+}
+
+enum ServiceTrackingKey {
+  CANCEL_REASON
+}
+
+enum ServiceType {
+  REPAIR
+  MAINTAIN
+  INSPECT
+  ENHANCE
+  ADVISE
+}
+
+enum ServiceTypeNew {
+  JOB
+  RECURRING_JOB
+  PROJECT
+}
+
+enum SubscriptionMode {
+  CUSTOM
+  AUTO
+}
+
+enum SubscriptionSource {
+  SYSTEM
+  WEBHOOK
+}
+
+enum SubscriptionTrackingKey {
+  CANCEL_REASONS
+  CANCEL_NOTE
+}
+
+enum SubscriptionType {
+  CREATE
+  UPDATE
+  DELETE
+  ADD_SUBSCRIPTION_PLAN
+  UPDATE_SUBSCRIPTION_PLAN
+  ADD_PLAN
+  UPDATE_PLAN
+}
+
+enum TaskCategory {
+  FOLLOW_UP
+  QUOTE
+  INVOICE
+  MATERIALS
+}
+
+enum TaskStatus {
+  TODO
+  DONE
+}
+
+enum TechnicianType {
+  OUTSIDE_VENDOR
+  IN_HOUSE
+  NETWORK
+}
+
+enum TimeProposalStatus {
+  PROPOSE
+  DECLINED
+  BOOKED
+  CANCELLED
+  EXPIRED
+  DRAFT
+  HOLD
+}
+
+enum TypeOfVisit {
+  ONSITE
+  VIRTUAL
+}
+
+enum UnitType {
+  INSTALL
+  HOUR
+  DAY
+  JOB
+  ITEM
+  PROJECT
+  SQUARE_FOOT
+  LINEAR_FOOT
+  CUBIC_YARD
+  VISIT
+  METER
+}
+
+enum UserActivityType {
+  SIGN_IN
+  SIGN_UP
+  SIGN_OUT
+  FORGOT_PASSWORD
+  RESET_PASSWORD
+  ADD_PHONE
+  UPDATE_PHONE
+  DELETE_USER
+  ADD_ACCOUNT
+  REMOVE_ACCOUNT
+  UPDATE_ACCOUNT
+  ADD_ROLE
+  REMOVE_ROLE
+  ADD_USER_PROFILE
+  ADD_PLACE
+  REMOVE_PLACE
+  UPDATE_USER_PROFILE
+  UPDATE_TECHNICIAN
+  UPDATE_USER_PLACE
+  ACTIVATED
+  DE_ACTIVATED
+  REMOVE_AVATAR
+  ADD_WORKING_HOURS
+  UPDATE_WORKING_HOURS
+}
+
+enum UserProfileKey {
+  DOWNLOAD_APP_MODAL
+  WELCOME_MOBILE
+  LAST_UPDATE_PASSWORD
+  TIME_ZONE
+  ASSIGN_MANAGER_MODAL
+  CALENDAR_EVENT_FILTER_TECHNICIAN
+  EARLY_ACCESS_TODO
+  GIVE_FEEDBACK
+}
+
+enum VendorType {
+  IN_HOUSE
+  NETWORK
+}
+
+enum ViewType {
+  SERVICE
+  SCHEDULE
+  PLACE
+  TASK
+  CALENDAR
+}
+
+enum VisitReportStatus {
+  VISIT_COMPLETE
+  REQUIRES_FOLLOW_UP
+}
+
+enum VisitReportType {
+  VISIT_START
+  VISIT_COMPLETE
+}
+
+enum VisitStatus {
+  DRAFT
+  PENDING
+  DECLINED
+  BOOKED
+  CANCELLED
+  EXPIRED
+  COMPLETED
+  RUNNING
+  HOLD
+  REQUESTED
+}
+
+enum VisitType {
+  CREATE
+  TIME_PREFERENCE_REQUEST
+  TIME_PROPOSAL_REQUEST
+  DECLINE_VISIT
+  ACCEPT_VISIT
+  SCHEDULE_VISIT
+  CANCEL_VISIT
+  SHARED_VISIT
+  DELETE
+  CHANGE_VISIT_STATUS_FROM_PENDING_TO_EXPIRED
+  CHANGE_VISIT_STATUS_FROM_BOOKED_TO_RUNNING
+  CHANGE_VISIT_STATUS_FROM_RUNNING_TO_COMPLETED
+  RE_ASSIGN_TECHNICIAN
+  RE_SCHEDULE_VISIT
+  RE_TIME_PROPOSAL_REQUEST
+  UPDATE_INSTRUCTION
+  UPDATE_VISIT
+  COMPLETE_VISIT
+  CREATE_A_DRAFT_VISIT
+  CREATE_A_HOLD_VISIT
+  CHANGE_VISIT_STATUS_FROM_DRAFT_TO_REQUESTED
+  CHANGE_VISIT_STATUS_FROM_DRAFT_TO_HOLD
+  CHANGE_VISIT_STATUS_FROM_DRAFT_TO_PENDING
+  CHANGE_VISIT_STATUS_FROM_DRAFT_TO_BOOKED
+  CHANGE_VISIT_STATUS_FROM_HOLD_TO_PENDING
+  CHANGE_VISIT_STATUS_FROM_HOLD_TO_BOOKED
+  START_VISIT
+  CHANGE_VISIT_STATUS_FROM_BOOKED_TO_COMPLETED
+}
