@@ -12,13 +12,14 @@ const prisma = new PrismaClient().$extends(
 )
 
 async function main() {
-  const stream = await prisma.user.stream()
+  const serviceStream = await prisma.service.stream()
 
   process.on('exit', (code) => {
-    stream.stop()
+    serviceStream.stop()
   })
 
-  for await (const event of stream) {
+  for await (const event of serviceStream) {
+    // console.log(typeof event);
     console.log('just received an event:', event)
   }
 }
